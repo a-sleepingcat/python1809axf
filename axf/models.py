@@ -14,3 +14,18 @@ class Base(models.Model):
     class Meta:
         abstract = True
 
+
+# 轮播图
+class Wheel(Base):
+    class Meta:
+        db_table ='axf_wheel'
+
+#导航
+class Nav(Base):
+    class Meta:
+        db_table="axf_nav"
+
+# 每日比购
+class Mustbuy(Base):
+    db_table = "axf_mustbuy"
+

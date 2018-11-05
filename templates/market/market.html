@@ -1,5 +1,8 @@
 {% extends 'base/base.html' %}
-
+{% load static %}
+{% block extcss %}
+    <link rel="stylesheet" href="{%  static 'market/css/market.css' %}">
+{% endblock %}
 {% block title %}
     爱鲜蜂 | 闪购超市
 {% endblock %}
