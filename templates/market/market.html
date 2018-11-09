@@ -1,12 +1,107 @@
 {% extends 'base/base.html' %}
 {% load static %}
 {% block extcss %}
-    <link rel="stylesheet" href="{%  static 'market/css/market.css' %}">
+    <link rel="stylesheet" href="{% static 'market/css/market.css' %}">
 {% endblock %}
+{% block extjs %}
+    <script src="{% static 'market/js/market.js' %}"></script>
+{% endblock %}
+
 {% block title %}
     爱鲜蜂 | 闪购超市
 {% endblock %}
 
 {% block content %}
-    闪购超市
+    <div class="market">
+        {#    侧边栏#}
+        <div class="type-slider">
+            <ul>
+                {% for foodtype in foodtypes %}
+                    <li class="type-item">
+                        <span></span>
+                        <a href="{% url 'axf:market' foodtype.typeid 0 0 %}">
+                            {{ foodtype.typename }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        {#    顶部导航#}
+        <nav>
+            <ul>
+                <li id="categoryBt">
+                    <span>
+                        全部类型
+                        <i class="glyphicon glyphicon-triangle-top"></i>
+                    </span>
+                </li>
+                <li id="sortBt">
+                    <span>
+                        综合排序
+                        <i class="glyphicon glyphicon-triangle-top"></i>
+                    </span>
+                </li>
+            </ul>
+        </nav>
+
+        {#    主体内容#}
+        <div class="main-content">
+            <div class="content-wrapper">
+                <ul>
+                    {% for goods in goodsList %}
+                        <li>
+                            {#                        商品信息#}
+                            <a href="#">
+                                {#                        商品图片#}
+                                <img src="{{ goods.productimg }}" alt="" class="goods-img">
+                                {#                        商品描述#}
+                                <div class="goods-info">
+                                    <p class="name">{{ goods.productlongname }}</p>
+                                    <p class="detailtag">
+                                        {% if goods.isxf %}
+                                            <span class="xf">精选</span>
+                                        {% endif %}
+
+                                        <span>{{ goods.productnum }}</span>
+                                    </p>
+                                    <p class="specifics">{{ goods.specifics }}</p>
+                                    <p class="price">
+                                        <span class="now-price">{{ goods.price }}</span>
+                                        <span class="market-price">{{ goods.marketprice }}</span>
+                                    </p>
+                                </div>
+                            </a>
+                            {#                        按钮#}
+                            <div class="bt-wrapper">
+                                <span class="glyphicon glyphicon-minus"></span>
+                                <span class="num">10</span>
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+{#            子类#}
+        <div class="bounce-view category-view">
+            <div class="bounce-wrapper">
+                {% for child in childTypleList %}
+                    <a href="{% url 'axf:market' categoryid child.childid 0 %}">
+                        {{ child.childname }}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+{#            排序#}
+        <div class="bounce-view sort-view">
+            <div class="bounce-wrapper">
+                <a href="{% url 'axf:market' categoryid childid 0 %}">综合排序</a>
+                <a href="{% url 'axf:market' categoryid childid 1 %}">销量排序</a>
+                <a href="{% url 'axf:market' categoryid childid 2 %}">价格最低</a>
+                <a href="{% url 'axf:market' categoryid childid 3 %}">价格最高</a>
+            </div>
+        </div>
+        </div>
+    </div>
 {% endblock %}
