@@ -78,12 +78,14 @@ footer .mine dd {
 
 .mine .other section ul{
     display: flex;
+    margin-bottom: 0 ;
 }
 .mine .other section ul li{
     width: 25%;
 }
 .mine .other section ul li dl{
     text-align: center;
+    margin-bottom: 0;
 }
 .mine .other section ul li dl dt{
     width:100%;

@@ -1,8 +1,13 @@
+import hashlib
+import os
+import uuid
 
-from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect
 
 # Create your views here.
-from axf.models import Wheel, Nav, Mustbuy, Shop, Mainshow, Foodtypes, Goods
+from axf.models import Wheel, Nav, Mustbuy, Shop, Mainshow, Foodtypes, Goods, User
+from python1809axf import settings
 
 
 def home(request):  # 首页
@@ -94,4 +99,112 @@ def cart(request):  # 购物车
 
 
 def mine(request):  # 我的
-    return render(request, 'mine/mine.html')
+    # 获取用户信息
+    token = request.session.get('token')
+    responseData = {
+
+    }
+
+    if token: #登陆
+        user = User.objects.get(token=token)
+        responseData['name'] = user.name
+        responseData['rank']= user.rank
+        responseData['img'] = '/static/uploads/' + user.img
+        responseData['isLogin'] = 1
+    else:
+        responseData['name'] ='未登录'
+        # responseData['rank'] = '暂无等级'
+        responseData['img'] = '/static/uploads/axf.png'
+
+    return render(request, 'mine/mine.html',context=responseData)
+
+# 加密
+def genarate_password(param):
+    sha = hashlib.sha256()
+    sha.update(param.encode('utf-8'))
+    return sha.hexdigest()
+
+#注册
+def register(request):
+    if request.method == 'GET':
+        return render(request,'mine/register.html')
+    elif request.method =='POST':
+       # try:
+           user = User()
+           user.account = request.POST.get('account')
+           user.password = genarate_password(request.POST.get('password'))
+           user.name = request.POST.get('name')
+           user.phone = request.POST.get('phone')
+           user.addr = request.POST.get('addr')
+           # user.img = 'axf.png'
+
+           # 头像
+           imgName = user.account + '.png'
+           imagePath = os.path.join(settings.MEDIA_ROOT, imgName)
+
+           file = request.FILES.get('icon')
+           # print(file.name)
+           with open(imagePath, 'wb') as fp:
+               for data in file.chunks():
+                   fp.write(data)
+           user.img = imgName
+
+           user.token = str(uuid.uuid5(uuid.uuid4(), 'register'))
+
+           user.save()
+
+       #     状态保持
+           request.session['token'] = user.token
+
+       #     重定向
+           return redirect('axf:mine')
+
+       # except:
+       #  return HttpResponse('注册失败')
+
+#验证帐号
+def checkaccount(request):
+    account = request.GET.get('account')
+
+    responseData = {
+        'msg':'帐号可用',
+        'status':1,    #1标识可用，-1标识为不可用
+    }
+
+    try:
+        user = User.objects.get(account=account)
+        responseData['msg'] = '帐号已被占用'
+        responseData['status'] = -1
+        return JsonResponse(responseData)
+    except:
+        pass
+
+    return JsonResponse(responseData)
+
+#退出
+def logout(request):
+    request.session.flush()
+    return redirect('axf:mine')
+
+
+def login(request):
+    if request.method =='GET':
+        return render(request,'mine/login.html')
+    elif request.method =='POST':
+        account = request.POST.get('account')
+        password = request.POST.get('password')
+
+        try:
+            user = User.objects.get(account=account)
+            if user.password == genarate_password(password): #密码相等，登录成功
+
+                #更新token
+                user.token = str(uuid.uuid5(uuid.uuid4(),'login'))
+                user.save()
+                request.session['token'] = user.token
+                return redirect('axf:mine')
+
+            else:  #登陆失败
+                return render(request, 'mine/login.html', context={'passwdErr': '密码错误！'})
+        except:
+            return render(request,'mine/login.html',context={'accountErr':'帐号不存在！'})
