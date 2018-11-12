@@ -6,7 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 
 # Create your views here.
-from axf.models import Wheel, Nav, Mustbuy, Shop, Mainshow, Foodtypes, Goods, User
+from axf.models import Wheel, Nav, Mustbuy, Shop, Mainshow, Foodtypes, Goods, User, Cart
 from python1809axf import settings
 
 
@@ -83,22 +83,37 @@ def market(request, categoryid, childid, sortid):    # 闪购超市
     elif sortid == '3': # 价格最高
         goodsList = goodsList.order_by(('-price'))
 
+    # 购物车数据
+    token = request.session.get('token')
+    carts = []
+
+    if token: #根据用户，获取对应用户下所有购物车数据
+        user = User.objects.get(token=token)
+        carts = Cart.objects.filter(user=user)
+
     data = {
         'foodtypes':foodtypes,  # 分类信息
         'goodsList':goodsList,  # 商品信息
         'childTypleList': childTypleList,   # 子类信息
         'categoryid':categoryid,    # 分类ID
         'childid': childid,     # 子类ID
+        'carts':carts,
     }
 
     return render(request, 'market/market.html', context=data)
 
+# 购物车
+def cart(request):
+    token = request.session.get('token')
+    if token: #有就显示购物车信息
+        user = User.objects.get(token=token)
+        carts = Cart.objects.filter(user=user).exclude(number=0)
+        return  render(request,'cart/cart.html',context={'carts':carts})
+    else: #跳转到登陆页面
+        return redirect('axf:login')
 
-def cart(request):  # 购物车
-    return render(request, 'cart/cart.html')
-
-
-def mine(request):  # 我的
+ # 我的
+def mine(request):
     # 获取用户信息
     token = request.session.get('token')
     responseData = {
@@ -177,16 +192,14 @@ def checkaccount(request):
         responseData['status'] = -1
         return JsonResponse(responseData)
     except:
-        pass
-
-    return JsonResponse(responseData)
+        return JsonResponse(responseData)
 
 #退出
 def logout(request):
     request.session.flush()
     return redirect('axf:mine')
 
-
+#登陆
 def login(request):
     if request.method =='GET':
         return render(request,'mine/login.html')
@@ -208,3 +221,63 @@ def login(request):
                 return render(request, 'mine/login.html', context={'passwdErr': '密码错误！'})
         except:
             return render(request,'mine/login.html',context={'accountErr':'帐号不存在！'})
+
+# 添加购物车
+def addcart(request):
+    goodsid = request.GET.get('goodsid')
+    token = request.session.get('token')
+
+    responseData = {
+        'msg':'添加购物车成功',
+        'status':1 #1标识添加成功，0标识添加失败，-1标识未登陆
+
+    }
+    if token : #登陆[直接操作模型]
+        # 获取用户
+        user = User.objects.get(token=token)
+        # 获取商品
+        goods = Goods.objects.get(pk=goodsid)
+
+        # 商品已经在购物车，只改商品个数
+        # 商品不存在购物车，新建对象（加入一条新的数据）
+        carts = Cart.objects.filter(user=user).filter(goods=goods)
+        if carts.exists(): #修改数量
+            cart = carts.first()
+            cart.number = cart.number + 1
+            cart.save()
+            responseData['number']= cart.number
+        else: #添加一条新记录
+            cart = Cart()
+            cart.user = user
+            cart.goods = goods
+            cart.number = 1
+            cart.save()
+            responseData['number'] = cart.number
+        return  JsonResponse(responseData)
+    else:   #未登录[跳转到登陆页面]
+        responseData['msg'] = '未登录，请登录后操作'
+        responseData['status'] = -1
+        return JsonResponse(responseData)
+
+# 购物车删减操作
+def subcart(request):
+    token = request.session.get('token')
+    goodsid = request.GET.get('goodsid')
+
+    # 现实减号肯定的是登陆了，不要判断了
+    # 对应用户和商品
+    user = User.objects.get(token=token)
+    goods = Goods.objects.get(pk = goodsid)
+
+    # 删减操作
+    cart = Cart.objects.filter(user=user).filter(goods=goods).first()
+    cart.number = cart.number -1
+    cart.save()
+
+    responseData = {
+        'mag':'购物车减操作成功',
+        'status':1,
+        'number':cart.number
+    }
+
+    return JsonResponse(responseData)

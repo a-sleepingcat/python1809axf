@@ -74,9 +74,16 @@
                             </a>
                             {#                        按钮#}
                             <div class="bt-wrapper">
-                                <span class="glyphicon glyphicon-minus"></span>
-                                <span class="num">10</span>
-                                <span class="glyphicon glyphicon-plus"></span>
+                                <span class="glyphicon glyphicon-minus" goodsid="{{ goods.id }}"></span>
+                                <span class="num">
+                                    {% for cart in carts %}
+                                        {% if goods.id == cart.goods.id %}
+                                            {{ cart.number }}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                </span>
+                                <span class="glyphicon glyphicon-plus" goodsid="{{ goods.id }}"></span>
                             </div>
                         </li>
                     {% endfor %}

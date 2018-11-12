@@ -40,14 +40,6 @@ $(function () {
         categoryBt = !categoryBt
 
         categoryBt ? categoryViewShow() : categoryViewHide()
-
-        // if (categoryBt){    // 显示
-        //     $('.bounce-view.category-view').show()
-        //     $('#categoryBt i').removeClass('glyphicon-triangle-top').addClass('glyphicon-triangle-bottom')
-        // } else {    // 隐藏
-        //     $('.bounce-view.category-view').hide()
-        //     $('#categoryBt i').removeClass('glyphicon-triangle-bottom').addClass('glyphicon-triangle-top')
-        // }
     })
 
 
@@ -90,4 +82,72 @@ $(function () {
         $('.bounce-view.sort-view').hide()
         $('#sortBt i').removeClass('glyphicon-triangle-bottom').addClass('glyphicon-triangle-top')
     }
+
+
+
+
+
+    // 购物车操作
+    $('.bt-wrapper .glyphicon-minus').hide()
+    $('.bt-wrapper .num').hide()
+
+
+    // 有商品数据的，即要显示； 否则不显示
+    $('.bt-wrapper .num').each(function () {
+        var num = parseInt($(this).html())
+        if (num){   // 有数据，即有添加购物车
+            $(this).show()
+            $(this).prev().show()
+        }
+    })
+
+
+    // 加操作
+    $('.bt-wrapper .glyphicon-plus').click(function () {
+        // 商品ID
+        var goodsid = $(this).attr('goodsid')
+        // that为了解决，在ajax中，this指向问题
+        var $that = $(this)
+
+        $.get('/addcart/',{'goodsid':goodsid}, function (response) {
+            console.log(response)
+            if (response.status == -1){ // 未登录
+                window.open('/login/', target="_self")
+            } else if (response.status == 1){   // 添加成功
+                // 错误的！！！
+                // $('.bt-wrapper .glyphicon-minus').show()
+                // $('.bt-wrapper .num').show().html(response.number)
+
+
+
+                // 只修改当前操作的商品
+                // $(this).prev().show().html(response.number)
+                // $(this).prev().prev().show()
+
+                $that.prev().show().html(response.number)
+                $that.prev().prev().show()
+            }
+        })
+    })
+
+    // 减操作
+    $('.bt-wrapper .glyphicon-minus').click(function () {
+        // 商品ID
+        var goodsid = $(this).attr('goodsid')
+        var $that = $(this)
+
+        // 发起ajax请求
+        $.get('/subcart/', {'goodsid':goodsid},function (response) {
+            console.log(response)
+            if (response.status == 1){  // 操作成功
+                var number = response.number
+                if (number > 0) {   // 显示，改变个数
+                    $that.next().html(number)
+                }  else {   // 隐藏减号和个数
+                    $that.next().hide()
+                    $that.hide()
+                }
+            }
+        })
+    })
 })
